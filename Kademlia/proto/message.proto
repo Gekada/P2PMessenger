@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package proto;
+
+enum MessageType {
+  PING = 0;
+  STORE = 1;
+  FIND_NODE = 2;
+  FIND_VALUE = 3;
+}
+
+message Message {
+  MessageType type = 1;
+  bytes from_user = 2;
+  bytes to_user = 3;
+  optional bytes rpc_id = 4;
+  optional bytes payload = 5;
+  int64 timestamp = 6;
+}
