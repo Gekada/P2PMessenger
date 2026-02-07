@@ -1,16 +1,16 @@
 
 set(KADEMLIALIB_HEADERS
         include/node.h
-        include/udp_connection.h
         include/routing_table.h
         include/node_entry.h
-        include/temp.h
+        include/constants.h
+        include/utils.h
 )
 
 set(KADEMLIALIB_SOURCES
         src/node.cpp
-        src/udp_connection.cpp
         src/routing_table.cpp
+        src/utils.cpp
 )
 
 option(BUILD_TEST_APP "Enables build of an executable for testing purposes" ON)

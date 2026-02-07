@@ -18,7 +18,6 @@ kademlia::Node::Node(uint16_t input_udp_port, QObject *parent) : QObject(parent)
 }
 
 void kademlia::Node::initSocket() {
-    qDebug("Socket init");
     udp_socket_ = std::make_unique<QUdpSocket>();
     auto result = udp_socket_->bind(QHostAddress::LocalHost, kUdpPort);
 
@@ -31,21 +30,30 @@ void kademlia::Node::initSocket() {
                      this, &kademlia::Node::onReceive);
 }
 
+// This code would be refactored in some time
 void kademlia::Node::onReceive() {
     qDebug("OnRecieve");
+    QByteArray message_buffer;
     while (udp_socket_->hasPendingDatagrams()) {
         QNetworkDatagram datagram = udp_socket_->receiveDatagram();
+        message_buffer.push_back(datagram.data());
         qDebug("Received a message");
+    }
+    proto::Message received_message;
+    if (received_message.ParseFromArray(message_buffer.data(),message_buffer.size())){
+        processMessage(received_message);
     }
 }
 
-void kademlia::Node::processMessage(const proto::Message &input_message) {
-    if (udp_socket_->hasPendingDatagrams()) {
-        QNetworkDatagram datagram = udp_socket_->receiveDatagram();
-        qDebug() << datagram.data();
-    } else {
-        qDebug("damn");
+void kademlia::Node::processMessage(const proto::Message &input_message) try{
+    auto callback = callbacks_.find(input_message.type());
+    if (callback == callbacks_.end()){
+        qWarning() << "Invalid message type: " << input_message.type();
+        return;
     }
+    callback->second(input_message, *this);
+} catch (const std::exception& ex){
+    qWarning() << "Caught an exception: " << ex.what();
 }
 
 

@@ -14,13 +14,15 @@ namespace kademlia {
     class RoutingTable {
     public:
         RoutingTable();
-        bool storeNode(const NodeEntry& input_node);
-        std::vector<NodeEntry> findNode(const std::array<unsigned char, 16>& node_id);
+
+        bool storeNode(const NodeEntry &input_node, const std::bitset<constants::kNodeIdSize> &owner_id);
+
+        std::vector<NodeEntry> findNode(const std::bitset<constants::kNodeIdSize> &node_id,
+                                        const std::bitset<constants::kNodeIdSize> &owner_id);
 
     private:
-        std::array<std::vector<NodeEntry>, 128> k_buckets_;
-        // TODO: move into config file idk
-        static constexpr short kBucketLimit = 5;
+        //stores nodes from furthest to nearest (k_buckets[kNodeIdSize] - the nearest node);
+        std::array<std::vector<NodeEntry>, constants::kNodeIdSize> k_buckets_;
     };
 }
 #endif //P2PMESSENGER_ROUTING_TABLE_H

@@ -1,6 +1,5 @@
 #include <iostream>
 #include "node.h"
-#include "temp.h"
 #include <QObject>
 #include <QCoreApplication>
 
@@ -11,7 +10,11 @@ int main(int argc, char *argv[]) {
     kademlia::Node second(1338);
     std::unique_ptr<QUdpSocket> udp_socket;
     udp_socket = std::make_unique<QUdpSocket>(nullptr);
-    udp_socket->writeDatagram("aaaaaaaaaa", 10, QHostAddress::LocalHost, 1337);
-    udp_socket->writeDatagram("aaaaaaaaaa", 10, QHostAddress::LocalHost, 1338);
+    proto::Message test;
+    test.set_type(proto::MessageType::FIND_NODE);
+    udp_socket->writeDatagram(test.SerializeAsString().data(), test.SerializeAsString().size(), QHostAddress::LocalHost,
+                              1337);
+    udp_socket->writeDatagram(test.SerializeAsString().data(), test.SerializeAsString().size(), QHostAddress::LocalHost,
+                              1338);
     return QCoreApplication::exec();
 }

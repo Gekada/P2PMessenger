@@ -10,7 +10,10 @@
 #include <QUdpSocket>
 #include <QTcpServer>
 
+#include <bitset>
+
 #include "message.pb.h"
+#include "constants.h"
 
 namespace kademlia {
     //TODO: either make immovable or shared_from_this
@@ -35,9 +38,9 @@ namespace kademlia {
         void initSocket();
 
 
-        std::array<unsigned char, 16> node_id_;
+        std::bitset<constants::kNodeIdSize> node_id_;
         // Put it into conf file later
-        const uint16_t kUdpPort ;
+        const uint16_t kUdpPort;
         //const uint16_t kTcpPort = 5225;
         std::unique_ptr<QUdpSocket> udp_socket_;
         QTcpSocket tcp_socket_;
