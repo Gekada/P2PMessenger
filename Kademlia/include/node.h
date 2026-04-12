@@ -14,6 +14,7 @@
 
 #include "message.pb.h"
 #include "constants.h"
+#include "routing_table.h"
 
 namespace kademlia {
     //TODO: either make immovable or shared_from_this
@@ -37,8 +38,16 @@ namespace kademlia {
     private:
         void initSocket();
 
+        bool isNewConnection();
+
+        void generateNodeId();
+
+        void bootstrap();
+
 
         std::bitset<constants::kNodeIdSize> node_id_;
+        RoutingTable r_table_;
+
         // Put it into conf file later
         const uint16_t kUdpPort;
         //const uint16_t kTcpPort = 5225;

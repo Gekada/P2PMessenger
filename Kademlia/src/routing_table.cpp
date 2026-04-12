@@ -2,19 +2,21 @@
 // Created by L on 25.09.2025.
 //
 #include "routing_table.h"
+#include "utils.h"
 
 // TODO: maybe get stored data from a file or smth
-kademlia::RoutingTable::RoutingTable() {}
+kademlia::RoutingTable::RoutingTable(std::bitset<constants::kNodeIdSize> owner_id) : owner_id_(owner_id) {}
 
-// TODO: account for situations when the node is already stored (move it to tail of its bucket)
 bool
 kademlia::RoutingTable::storeNode(const NodeEntry &input_node, const std::bitset<constants::kNodeIdSize> &owner_id) {
     auto nodes_distance = input_node.node_id_ ^ owner_id;
     for (int i = 0; i < nodes_distance.size(); i++) {
         if (nodes_distance[i]) {
             if (k_buckets_[i].size() < constants::kBucketLimit) {
-                // TODO: there should be some sort by recency or smth
-                k_buckets_[i].emplace_back(input_node);
+                if (eraseDuplicate(k_buckets_[i], input_node)) {
+                    return true;
+                }
+                k_buckets_[i].push_back(input_node);
                 return true;
             }
             // TODO: write a second branch with peers activity check
@@ -23,31 +25,71 @@ kademlia::RoutingTable::storeNode(const NodeEntry &input_node, const std::bitset
     return false;
 }
 
-//I am terrified of how many todos I've made when the project is like 150 lines of code...
-std::vector<kademlia::NodeEntry> kademlia::RoutingTable::findNode(const std::bitset<constants::kNodeIdSize> &node_id,
-                                                                  const std::bitset<constants::kNodeIdSize> &owner_id) {
+std::vector<kademlia::NodeEntry> kademlia::RoutingTable::findKNodes(const std::bitset<constants::kNodeIdSize> &searching_id) {
     std::vector<kademlia::NodeEntry> found_nodes;
-    auto nodes_distance = node_id ^ owner_id;
+    auto nodes_distance = searching_id ^ owner_id_;
     short i = 0;
     while (i < nodes_distance.size()) {
         if (nodes_distance[i]) {
-            std::copy(k_buckets_[i].begin(), k_buckets_[i].begin(), found_nodes.begin());
+            std::copy(k_buckets_[i].begin(), k_buckets_[i].end(), found_nodes.begin());
             break;
         }
         i++;
     }
-    if (found_nodes.size() < constants::kBucketLimit) {
-        short left_edge = i - 1;
-        short right_edge = i + 1;
-        while ((left_edge >= 0 || right_edge < k_buckets_.size()) && found_nodes.size() < constants::kBucketLimit) {
-            unsigned short left_it = 0;
-            unsigned short right_it = 0;
-            while (left_it < constants::kBucketLimit || right_it < constants::kBucketLimit) {
 
-            }
-            left_edge++;
-            right_edge++;
+    if (found_nodes.size() == constants::kBucketLimit) {
+        return found_nodes;
+    }
+
+    short left_edge = i - 1;
+    short right_edge = i + 1;
+    while (found_nodes.size() < constants::kBucketLimit && (left_edge > 0 || right_edge < k_buckets_.size())) {
+        if (left_edge > 0) {
+            std::copy(k_buckets_[left_edge].begin(), k_buckets_[left_edge].end(),
+                      std::inserter(found_nodes, found_nodes.begin()));
+            left_edge--;
+        }
+        if (right_edge < k_buckets_.size()) {
+            std::copy(k_buckets_[right_edge].begin(), k_buckets_[right_edge].end(),
+                      std::inserter(found_nodes, found_nodes.begin()));
+            right_edge--;
         }
     }
+
+    std::sort(found_nodes.begin(), found_nodes.end(), [searching_id](const auto &first, const auto &second) {
+        return (first.getId() ^ searching_id) < (second.getId() ^ searching_id);
+    });
+
+    found_nodes.erase(found_nodes.begin() + 5);
+
     return found_nodes;
+}
+
+bool inline kademlia::RoutingTable::eraseDuplicate(std::vector<NodeEntry> &k_bucket, const NodeEntry &input_node) {
+    auto pos = std::find_if(k_bucket.cbegin(), k_bucket.cend(), [input_node](const auto &el) {
+        return el.node_id_ == input_node.node_id_;
+    });
+    if (pos != k_bucket.end()) {
+        if (pos == k_bucket.end() - 1) {
+            return true;
+        }
+        k_bucket.erase(pos, pos + 1);
+        return false;
+    }
+}
+
+std::optional<kademlia::NodeEntry> kademlia::RoutingTable::findNode(const std::bitset<constants::kNodeIdSize> &searching_id) {
+    auto nodes_distance = searching_id ^ owner_id_;
+    for (int i = 0; i < nodes_distance.size(); i++) {
+        if (nodes_distance[i]) {
+            auto it = std::find_if(k_buckets_[i].begin(), k_buckets_[i].end(), [searching_id](const auto &elem){
+               return elem.node_id_ == searching_id;
+            });
+            if (it != k_buckets_[i].end()){
+                return {*it};
+            }
+            break;
+        }
+    }
+    return std::nullopt;
 }

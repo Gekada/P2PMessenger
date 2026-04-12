@@ -11,5 +11,8 @@ namespace kademlia::constants {
     // Node id bites
     constexpr unsigned int kBucketsSize = kNodeIdSize * 8;
 
+    constexpr uint16_t kDefaultUdpPort = 1337;
+
+    constexpr char confPath[] = "../conf/conf.json";
 }
 #endif //P2PMESSENGER_CONSTANTS_H

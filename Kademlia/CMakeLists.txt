@@ -5,6 +5,8 @@ set(KADEMLIALIB_HEADERS
         include/node_entry.h
         include/constants.h
         include/utils.h
+        include/message_wrapper.h
+        include/message_builder.h
 )
 
 set(KADEMLIALIB_SOURCES
@@ -16,6 +18,10 @@ set(KADEMLIALIB_SOURCES
 option(BUILD_TEST_APP "Enables build of an executable for testing purposes" ON)
 
 find_package(Protobuf CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
+find_package(magic_enum CONFIG REQUIRED)
+find_package(cryptopp CONFIG REQUIRED)
 
 qt_add_library(kademliaLib STATIC
         ${KADEMLIALIB_SOURCES}
@@ -24,11 +30,11 @@ qt_add_library(kademliaLib STATIC
 
 add_subdirectory(proto)
 
-target_link_libraries(kademliaLib PRIVATE Qt6::Core Qt6::Network protoLib)
+target_link_libraries(kademliaLib PRIVATE Qt6::Core Qt6::Network protoLib nlohmann_json fmt cryptopp)
 target_include_directories(kademliaLib PUBLIC include)
 
 if (BUILD_TEST_APP)
     add_executable(cliTest app/main.cpp)
-    target_link_libraries(cliTest PRIVATE kademliaLib Qt6::Core Qt6::Network protoLib)
+    target_link_libraries(cliTest PRIVATE kademliaLib Qt6::Core Qt6::Network protoLib magic_enum)
     target_include_directories(cliTest PUBLIC include)
 endif ()

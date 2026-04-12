@@ -1,0 +1,21 @@
+{
+  "name" : "p2pmessenger",
+  "version-string" : "1.0.0",
+  "builtin-baseline" : "cd5e746ec203c8c3c61647e0886a8df8c1e78e41",
+  "dependencies" : [ {
+    "name" : "protobuf",
+    "version>=" : "3.21.12"
+  }, {
+    "name" : "nlohmann-json",
+    "version>=" : "3.11.2"
+  }, {
+    "name" : "fmt",
+    "version>=" : "12.1.0"
+  }, {
+    "name" : "magic-enum",
+    "version>=" : "0.9.7#1"
+  }, {
+    "name" : "cryptopp",
+    "version>=" : "2026-03-02"
+  } ]
+}
