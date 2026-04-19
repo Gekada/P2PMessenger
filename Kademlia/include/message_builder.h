@@ -8,6 +8,11 @@
 
 #include <optional>
 
+#include <cryptopp/osrng.h>
+#include <cryptopp/secblock.h>
+#include <cryptopp/hex.h>
+#include <cryptopp/filters.h>
+
 #include "message.pb.h"
 #include "message_wrapper.h"
 #include "utils.h"
@@ -20,12 +25,36 @@ public:
         return *this;
     }
 
+    MessageBuilder& setReciever(const std::string& node_id) {
+        protoMessage_.set_to_user(node_id);
+        return *this;
+    }
+
+    MessageBuilder& setSender(const std::string& node_id) {
+        protoMessage_.set_from_user(node_id);
+        return *this;
+    }
+
+    MessageBuilder& setPayload(const std::string& payload) {
+        protoMessage_.set_payload(payload);
+        return *this;
+    }
+
     proto::Message buildUnwrapped() {
         const auto now = std::chrono::system_clock::now();
         const int64_t timestamp =
                 std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch())
                         .count();
         protoMessage_.set_timestamp(timestamp);
+
+        CryptoPP::AutoSeededRandomPool prng;
+
+        const size_t rpcIdLength = 4;
+        CryptoPP::SecByteBlock rpcId(rpcIdLength);
+        prng.GenerateBlock(rpcId, rpcId.size());
+        CryptoPP::StringSource ss(rpcId.data(), rpcId.size(), true);
+        protoMessage_.set_rpc_id(rpcId.data(), rpcId.size());
+
         proto::Message output;
         swap(protoMessage_, output);
         return output;

@@ -15,6 +15,8 @@
 #include "message.pb.h"
 #include "constants.h"
 #include "routing_table.h"
+#include "message_builder.h"
+#include "utils.h"
 
 namespace kademlia {
     //TODO: either make immovable or shared_from_this
@@ -26,7 +28,7 @@ namespace kademlia {
 
         explicit Node(QObject *parent = nullptr);
 
-        explicit Node(uint16_t input_udp_port, QObject *parent = nullptr);
+        explicit Node(uint16_t input_udp_port, bool is_bootstrap = false, QObject *parent = nullptr);
 
         void processMessage(const proto::Message &input_message);
 
@@ -40,10 +42,13 @@ namespace kademlia {
 
         bool isNewConnection();
 
-        void generateNodeId();
+        void initNodeId();
+
+        std::string generateNodeId();
 
         void bootstrap();
 
+        MessageBuilder builder_;
 
         std::bitset<constants::kNodeIdSize> node_id_;
         RoutingTable r_table_;

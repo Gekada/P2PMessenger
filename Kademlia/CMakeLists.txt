@@ -30,11 +30,18 @@ qt_add_library(kademliaLib STATIC
 
 add_subdirectory(proto)
 
-target_link_libraries(kademliaLib PRIVATE Qt6::Core Qt6::Network protoLib nlohmann_json fmt cryptopp)
+target_link_libraries(kademliaLib PRIVATE Qt6::Core Qt6::Network protoLib nlohmann_json fmt::fmt cryptopp::cryptopp magic_enum::magic_enum)
 target_include_directories(kademliaLib PUBLIC include)
 
 if (BUILD_TEST_APP)
     add_executable(cliTest app/main.cpp)
-    target_link_libraries(cliTest PRIVATE kademliaLib Qt6::Core Qt6::Network protoLib magic_enum)
-    target_include_directories(cliTest PUBLIC include)
+    target_link_libraries(cliTest PRIVATE kademliaLib Qt6::Core Qt6::Network protoLib nlohmann_json fmt::fmt cryptopp::cryptopp magic_enum::magic_enum)
 endif ()
+
+add_custom_command(
+        TARGET cliTest POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/conf"
+        "$<TARGET_FILE_DIR:cliTest>/conf"
+)
+

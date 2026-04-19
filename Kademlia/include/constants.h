@@ -13,6 +13,6 @@ namespace kademlia::constants {
 
     constexpr uint16_t kDefaultUdpPort = 1337;
 
-    constexpr char confPath[] = "../conf/conf.json";
+    constexpr char confPath[] = "conf/conf.json";
 }
 #endif //P2PMESSENGER_CONSTANTS_H

@@ -10,7 +10,7 @@ kademlia::RoutingTable::RoutingTable(std::bitset<constants::kNodeIdSize> owner_i
 bool
 kademlia::RoutingTable::storeNode(const NodeEntry &input_node, const std::bitset<constants::kNodeIdSize> &owner_id) {
     auto nodes_distance = input_node.node_id_ ^ owner_id;
-    for (int i = 0; i < nodes_distance.size(); i++) {
+    for (int i = nodes_distance.size() - 1; i >= 0; i--) {
         if (nodes_distance[i]) {
             if (k_buckets_[i].size() < constants::kBucketLimit) {
                 if (eraseDuplicate(k_buckets_[i], input_node)) {
@@ -25,16 +25,17 @@ kademlia::RoutingTable::storeNode(const NodeEntry &input_node, const std::bitset
     return false;
 }
 
-std::vector<kademlia::NodeEntry> kademlia::RoutingTable::findKNodes(const std::bitset<constants::kNodeIdSize> &searching_id) {
+std::vector<kademlia::NodeEntry>
+kademlia::RoutingTable::findKNodes(const std::bitset<constants::kNodeIdSize> &searching_id) {
     std::vector<kademlia::NodeEntry> found_nodes;
     auto nodes_distance = searching_id ^ owner_id_;
-    short i = 0;
+    short i = nodes_distance.size() - 1;
     while (i < nodes_distance.size()) {
         if (nodes_distance[i]) {
-            std::copy(k_buckets_[i].begin(), k_buckets_[i].end(), found_nodes.begin());
+            std::copy(k_buckets_[i].begin(), k_buckets_[i].end(), std::back_inserter(found_nodes));
             break;
         }
-        i++;
+        i--;
     }
 
     if (found_nodes.size() == constants::kBucketLimit) {
@@ -46,13 +47,13 @@ std::vector<kademlia::NodeEntry> kademlia::RoutingTable::findKNodes(const std::b
     while (found_nodes.size() < constants::kBucketLimit && (left_edge > 0 || right_edge < k_buckets_.size())) {
         if (left_edge > 0) {
             std::copy(k_buckets_[left_edge].begin(), k_buckets_[left_edge].end(),
-                      std::inserter(found_nodes, found_nodes.begin()));
+                      std::back_inserter(found_nodes));
             left_edge--;
         }
         if (right_edge < k_buckets_.size()) {
             std::copy(k_buckets_[right_edge].begin(), k_buckets_[right_edge].end(),
-                      std::inserter(found_nodes, found_nodes.begin()));
-            right_edge--;
+                      std::back_inserter(found_nodes));
+            right_edge++;
         }
     }
 
@@ -60,7 +61,9 @@ std::vector<kademlia::NodeEntry> kademlia::RoutingTable::findKNodes(const std::b
         return (first.getId() ^ searching_id) < (second.getId() ^ searching_id);
     });
 
-    found_nodes.erase(found_nodes.begin() + 5);
+    if (found_nodes.size() > constants::kBucketLimit) {
+        found_nodes.resize(constants::kBucketLimit);
+    }
 
     return found_nodes;
 }
@@ -74,18 +77,19 @@ bool inline kademlia::RoutingTable::eraseDuplicate(std::vector<NodeEntry> &k_buc
             return true;
         }
         k_bucket.erase(pos, pos + 1);
-        return false;
     }
+    return false;
 }
 
-std::optional<kademlia::NodeEntry> kademlia::RoutingTable::findNode(const std::bitset<constants::kNodeIdSize> &searching_id) {
+std::optional<kademlia::NodeEntry>
+kademlia::RoutingTable::findNode(const std::bitset<constants::kNodeIdSize> &searching_id) {
     auto nodes_distance = searching_id ^ owner_id_;
-    for (int i = 0; i < nodes_distance.size(); i++) {
+    for (int i = nodes_distance.size() - 1; i >= 0; i--) {
         if (nodes_distance[i]) {
-            auto it = std::find_if(k_buckets_[i].begin(), k_buckets_[i].end(), [searching_id](const auto &elem){
-               return elem.node_id_ == searching_id;
+            auto it = std::find_if(k_buckets_[i].begin(), k_buckets_[i].end(), [searching_id](const auto &elem) {
+                return elem.node_id_ == searching_id;
             });
-            if (it != k_buckets_[i].end()){
+            if (it != k_buckets_[i].end()) {
                 return {*it};
             }
             break;

@@ -21,19 +21,19 @@ bool operator<(const std::bitset<N> &first, const std::bitset<N> &second) {
     return false;
 }
 
-template <typename Enum>
+template<typename Enum>
 struct fmt::formatter<Enum, std::enable_if_t<std::is_enum_v<Enum>, char>>
         : fmt::formatter<std::string_view> {
-    template <typename FormatContext>
-    auto format(const Enum e, FormatContext& ctx) const {
+    template<typename FormatContext>
+    auto format(const Enum e, FormatContext &ctx) const {
         return fmt::formatter<std::string_view>::format(magic_enum::enum_name(e),
                                                         ctx);
     }
 };
 
 namespace kademlia::utils {
-    unsigned long calculateDistance(const std::bitset<constants::kNodeIdSize> &from,
-                                    const std::bitset<constants::kNodeIdSize> &to);
+
+    std::bitset<128> hexToBitset(const std::string &hex_str);
 
 }
 #endif //P2PMESSENGER_UTILS_H
