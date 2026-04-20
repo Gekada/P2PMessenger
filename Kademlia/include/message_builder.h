@@ -40,20 +40,25 @@ public:
         return *this;
     }
 
-    proto::Message buildUnwrapped() {
+    proto::Message buildUnwrapped(std::string input_rpc_id = ""){
         const auto now = std::chrono::system_clock::now();
         const int64_t timestamp =
                 std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch())
                         .count();
         protoMessage_.set_timestamp(timestamp);
 
-        CryptoPP::AutoSeededRandomPool prng;
+        if (input_rpc_id.empty()){
+            CryptoPP::AutoSeededRandomPool prng;
 
-        const size_t rpcIdLength = 4;
-        CryptoPP::SecByteBlock rpcId(rpcIdLength);
-        prng.GenerateBlock(rpcId, rpcId.size());
-        CryptoPP::StringSource ss(rpcId.data(), rpcId.size(), true);
-        protoMessage_.set_rpc_id(rpcId.data(), rpcId.size());
+            const size_t rpcIdLength = 4;
+            CryptoPP::SecByteBlock rpc_id(rpcIdLength);
+            prng.GenerateBlock(rpc_id, rpc_id.size());
+            CryptoPP::StringSource ss(rpc_id.data(), rpc_id.size(), true);
+            protoMessage_.set_rpc_id(rpc_id.data(), rpc_id.size());
+        }
+        else{
+            protoMessage_.set_rpc_id(input_rpc_id.data(), input_rpc_id.size());
+        }
 
         proto::Message output;
         swap(protoMessage_, output);

@@ -2,6 +2,7 @@
 #include "node.h"
 #include <QObject>
 #include <QCoreApplication>
+#include <QTimer>
 
 
 int main(int argc, char *argv[]) {

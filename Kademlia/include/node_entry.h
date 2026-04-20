@@ -10,7 +10,7 @@
 
 namespace kademlia {
     struct NodeEntry {
-        uint16_t port_;
+        int port_;
         QHostAddress ip_address_;
         std::bitset<constants::kNodeIdSize> node_id_;
 

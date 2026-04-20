@@ -2,6 +2,7 @@
 // Created by L on 03.08.2025.
 //
 #include <QNetworkDatagram>
+#include <QTimer>
 
 #include <nlohmann/json.hpp>
 
@@ -16,7 +17,26 @@
 
 const kademlia::Node::CallbackTable kademlia::Node::callbacks_{
         {proto::MessageType::PING, [](const proto::Message &message, Node &node) {
-            std::cout << "Node Ping rpc :\')\n";
+            if (node.requests_map_.contains(message.rpc_id())) {
+                qDebug("Got a response PING :\')");
+                node.requests_map_.erase(message.rpc_id());
+            } else {
+                qDebug("Node PING rpc :\')");
+                auto sender_node = node.r_table_.findNode(std::bitset<128>(message.from_user()));
+                if (sender_node.has_value()) {
+                    std::string response = node.builder_.setSender(node.node_id_.to_string()).setReciever(
+                            sender_node->node_id_.to_string()).setType(
+                            proto::MessageType::PING).buildUnwrapped(message.rpc_id()).SerializeAsString();
+                    node.udp_socket_->writeDatagram(response.data(), response.size(),
+                                                    sender_node->ip_address_,
+                                                    sender_node->port_);
+
+                } else {
+                    qWarning() << "Got a message from an unknown node: " << message.type();
+                }
+            }
+
+
         }}
 };
 
@@ -55,6 +75,9 @@ void kademlia::Node::onReceive() {
 
         proto::Message received_message;
         if (received_message.ParseFromArray(data.data(), data.size())) {
+            // storing each node we got a message from
+            r_table_.storeNode({datagram.senderPort(), datagram.senderAddress(),
+                                std::bitset<128>(received_message.from_user())});
             processMessage(received_message);
         } else {
             qWarning("Failed to parse datagram into protobuf message");
@@ -73,28 +96,6 @@ void kademlia::Node::processMessage(const proto::Message &input_message) try {
     qWarning() << "Caught an exception: " << ex.what();
 }
 
-void kademlia::Node::bootstrap() {
-    if (isNewConnection()) {
-        initNodeId();
-    }
-
-    std::ifstream config_input(constants::confPath);
-
-    if (!config_input.is_open()) {
-        qWarning() << "Couldn't open storage file";
-        return;
-    }
-    nlohmann::json data = nlohmann::json::parse(config_input);
-
-    std::string message = builder_.setType(proto::MessageType::PING).buildUnwrapped().SerializeAsString();
-    std::string bootstrap_node_ip = data["bootstrap_node_ip"];
-    int bootstrap_node_port = std::stoi(std::string(data["bootstrap_node_port"]));
-
-
-    udp_socket_->writeDatagram(message.data(), message.size(), QHostAddress(bootstrap_node_ip.data()),
-                               bootstrap_node_port);
-}
-
 bool kademlia::Node::isNewConnection() {
     std::ifstream config_input(constants::confPath);
 
@@ -105,7 +106,7 @@ bool kademlia::Node::isNewConnection() {
 
     nlohmann::json data = nlohmann::json::parse(config_input);
 
-    if (data.find("nodeId") == data.end()) {
+    if (data.find("node_id") == data.end()) {
         return true;
     }
     return false;
@@ -131,6 +132,7 @@ void kademlia::Node::initNodeId() {
 }
 
 std::string kademlia::Node::generateNodeId() {
+    //Generating id by ip:port for consistency in debugging
     std::string local_endpoint =
             udp_socket_->localAddress().toString().toStdString() + std::to_string(udp_socket_->localPort());
     std::string digest;
@@ -148,6 +150,44 @@ std::string kademlia::Node::generateNodeId() {
     }
     return digest;
 }
+
+void kademlia::Node::pushRequestToMap(const proto::Message &message) {
+    requests_map_.insert({message.rpc_id(), message.type()});
+    std::string id = message.rpc_id();
+
+    QTimer::singleShot(5000, this, [this, id]() {
+        if (requests_map_.erase(id)) {
+            qDebug() << "Request timed out: " << id;
+        }
+    });
+}
+
+void kademlia::Node::bootstrap() {
+    if (isNewConnection()) {
+        initNodeId();
+    }
+
+    std::ifstream config_input(constants::confPath);
+
+    if (!config_input.is_open()) {
+        qWarning() << "Couldn't open storage file";
+        return;
+    }
+    nlohmann::json data = nlohmann::json::parse(config_input);
+
+    proto::Message proto_message = builder_.setType(proto::MessageType::PING).setSender(
+            node_id_.to_string()).buildUnwrapped();
+    std::string message = proto_message.SerializeAsString();
+    std::string bootstrap_node_ip = data["bootstrap_node_ip"];
+    int bootstrap_node_port = std::stoi(std::string(data["bootstrap_node_port"]));
+
+    pushRequestToMap(proto_message);
+
+    udp_socket_->writeDatagram(message.data(), message.size(), QHostAddress(bootstrap_node_ip.data()),
+                               bootstrap_node_port);
+}
+
+
 
 
 

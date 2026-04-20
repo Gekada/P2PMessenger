@@ -22,6 +22,7 @@ namespace kademlia {
     //TODO: either make immovable or shared_from_this
     class Node : public QObject {
     Q_OBJECT
+
     public:
         using CallbackTable = std::unordered_map<
                 proto::MessageType, std::function<void(const proto::Message &, Node &)>>;
@@ -46,6 +47,8 @@ namespace kademlia {
 
         std::string generateNodeId();
 
+        void pushRequestToMap(const proto::Message &message);
+
         void bootstrap();
 
         MessageBuilder builder_;
@@ -61,6 +64,9 @@ namespace kademlia {
         QTcpServer tcp_server_;
 
         static const CallbackTable callbacks_;
+
+        // Here we save each sent rpc request, which awaits a response, the string is an rpc id
+        std::unordered_map<std::string, proto::MessageType> requests_map_;
     };
 }
 #endif //P2PMESSENGER_NODE_H

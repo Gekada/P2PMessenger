@@ -14,8 +14,8 @@
 namespace kademlia {
     class RoutingTable {
     public:
-        RoutingTable(std::bitset<constants::kNodeIdSize> owner_id);
-        bool storeNode(const NodeEntry &input_node, const std::bitset<constants::kNodeIdSize> &owner_id);
+        explicit RoutingTable(std::bitset<constants::kNodeIdSize> owner_id);
+        bool storeNode(const NodeEntry &input_node);
         std::vector<NodeEntry> findKNodes(const std::bitset<constants::kNodeIdSize> &searching_id);
         std::optional<NodeEntry> findNode(const std::bitset<constants::kNodeIdSize> &searching_id);
 

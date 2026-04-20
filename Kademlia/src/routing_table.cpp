@@ -4,12 +4,11 @@
 #include "routing_table.h"
 #include "utils.h"
 
-// TODO: maybe get stored data from a file or smth
 kademlia::RoutingTable::RoutingTable(std::bitset<constants::kNodeIdSize> owner_id) : owner_id_(owner_id) {}
 
 bool
-kademlia::RoutingTable::storeNode(const NodeEntry &input_node, const std::bitset<constants::kNodeIdSize> &owner_id) {
-    auto nodes_distance = input_node.node_id_ ^ owner_id;
+kademlia::RoutingTable::storeNode(const NodeEntry &input_node) {
+    auto nodes_distance = input_node.node_id_ ^ owner_id_;
     for (int i = nodes_distance.size() - 1; i >= 0; i--) {
         if (nodes_distance[i]) {
             if (k_buckets_[i].size() < constants::kBucketLimit) {
@@ -30,7 +29,7 @@ kademlia::RoutingTable::findKNodes(const std::bitset<constants::kNodeIdSize> &se
     std::vector<kademlia::NodeEntry> found_nodes;
     auto nodes_distance = searching_id ^ owner_id_;
     short i = nodes_distance.size() - 1;
-    while (i < nodes_distance.size()) {
+    while (i >= 0) {
         if (nodes_distance[i]) {
             std::copy(k_buckets_[i].begin(), k_buckets_[i].end(), std::back_inserter(found_nodes));
             break;
