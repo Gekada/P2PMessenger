@@ -7,12 +7,16 @@ set(KADEMLIALIB_HEADERS
         include/utils.h
         include/message_wrapper.h
         include/message_builder.h
+        include/node_lookup_task.h
+        include/lookup_task_base.h
 )
 
 set(KADEMLIALIB_SOURCES
         src/node.cpp
         src/routing_table.cpp
         src/utils.cpp
+        src/node_lookup_task.cpp
+        src/lookup_task_base.cpp
 )
 
 option(BUILD_TEST_APP "Enables build of an executable for testing purposes" ON)

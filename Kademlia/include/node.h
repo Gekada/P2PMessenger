@@ -17,6 +17,7 @@
 #include "routing_table.h"
 #include "message_builder.h"
 #include "utils.h"
+#include "lookup_task_base.h"
 
 namespace kademlia {
     //TODO: either make immovable or shared_from_this
@@ -31,12 +32,20 @@ namespace kademlia {
 
         explicit Node(uint16_t input_udp_port, bool is_bootstrap = false, QObject *parent = nullptr);
 
+
         void processMessage(const proto::Message &input_message);
 
+        void findNode(std::bitset<constants::kNodeIdSize> target_id);
+
+        const std::bitset<constants::kNodeIdSize> &getId();
 
     public slots:
 
         void onReceive();
+
+    signals:
+        // In this case it signals that the first ping with bootstrap is done
+        void finishedBootstrap();
 
     private:
         void initSocket();
@@ -51,12 +60,16 @@ namespace kademlia {
 
         void bootstrap();
 
+        void sendRequest(const proto::Message &proto_message, const QHostAddress &receiver, int port);
+
+        void registerNestedNodes(const proto::Message &proto_message);
+
         MessageBuilder builder_;
 
         std::bitset<constants::kNodeIdSize> node_id_;
         RoutingTable r_table_;
+        bool is_bootstrapped_ = false;
 
-        // Put it into conf file later
         const uint16_t kUdpPort;
         //const uint16_t kTcpPort = 5225;
         std::unique_ptr<QUdpSocket> udp_socket_;
@@ -67,6 +80,9 @@ namespace kademlia {
 
         // Here we save each sent rpc request, which awaits a response, the string is an rpc id
         std::unordered_map<std::string, proto::MessageType> requests_map_;
+        // A map which couples LookupValue and LookupNode tasks (rpc id to object)
+        std::unordered_map<std::string, std::shared_ptr<ILookupTask>> lookup_task_map_;
+
     };
 }
 #endif //P2PMESSENGER_NODE_H

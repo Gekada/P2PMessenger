@@ -8,6 +8,8 @@ namespace kademlia::constants {
     constexpr unsigned short kNodeIdSize = 128;
     // The K coefficient
     constexpr unsigned short kBucketLimit = 5;
+    // a parameter
+    constexpr unsigned short kParallelismLimit = 3;
     // Node id bites
     constexpr unsigned int kBucketsSize = kNodeIdSize * 8;
 

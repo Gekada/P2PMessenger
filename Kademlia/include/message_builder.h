@@ -4,6 +4,7 @@
 
 #ifndef P2PMESSENGER_MESSAGE_BUILDER_H
 #define P2PMESSENGER_MESSAGE_BUILDER_H
+
 #include <fmt/chrono.h>
 
 #include <optional>
@@ -16,38 +17,50 @@
 #include "message.pb.h"
 #include "message_wrapper.h"
 #include "utils.h"
+#include "node_entry.h"
 
 class MessageBuilder {
 public:
 
-    MessageBuilder& setType(const proto::MessageType type) {
+    MessageBuilder &setType(const proto::MessageType type) {
         protoMessage_.set_type(type);
         return *this;
     }
 
-    MessageBuilder& setReciever(const std::string& node_id) {
+    MessageBuilder &setReciever(const std::string &node_id) {
         protoMessage_.set_to_user(node_id);
         return *this;
     }
 
-    MessageBuilder& setSender(const std::string& node_id) {
+    MessageBuilder &setSender(const std::string &node_id) {
         protoMessage_.set_from_user(node_id);
         return *this;
     }
 
-    MessageBuilder& setPayload(const std::string& payload) {
+    MessageBuilder &setPayload(const std::string &payload) {
         protoMessage_.set_payload(payload);
         return *this;
     }
 
-    proto::Message buildUnwrapped(std::string input_rpc_id = ""){
+    MessageBuilder &setNodes(const std::vector<kademlia::NodeEntry> &nodes) {
+        for (const auto &node: nodes) {
+            proto::NodeInfo *proto_node = protoMessage_.add_closest_nodes();;
+            proto_node->set_ip(node.ip_address_.toString().toStdString());
+            proto_node->set_node_id(node.node_id_.to_string());
+            proto_node->set_port(node.port_);
+        }
+        return *this;
+    }
+
+    proto::Message buildUnwrapped(std::string input_rpc_id = "", bool is_reply = false) {
         const auto now = std::chrono::system_clock::now();
         const int64_t timestamp =
                 std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch())
                         .count();
         protoMessage_.set_timestamp(timestamp);
+        protoMessage_.set_is_reply(is_reply);
 
-        if (input_rpc_id.empty()){
+        if (input_rpc_id.empty()) {
             CryptoPP::AutoSeededRandomPool prng;
 
             const size_t rpcIdLength = 4;
@@ -55,8 +68,7 @@ public:
             prng.GenerateBlock(rpc_id, rpc_id.size());
             CryptoPP::StringSource ss(rpc_id.data(), rpc_id.size(), true);
             protoMessage_.set_rpc_id(rpc_id.data(), rpc_id.size());
-        }
-        else{
+        } else {
             protoMessage_.set_rpc_id(input_rpc_id.data(), input_rpc_id.size());
         }
 
@@ -85,4 +97,5 @@ public:
 private:
     proto::Message protoMessage_;
 };
+
 #endif //P2PMESSENGER_MESSAGE_BUILDER_H

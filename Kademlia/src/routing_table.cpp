@@ -44,7 +44,7 @@ kademlia::RoutingTable::findKNodes(const std::bitset<constants::kNodeIdSize> &se
     short left_edge = i - 1;
     short right_edge = i + 1;
     while (found_nodes.size() < constants::kBucketLimit && (left_edge > 0 || right_edge < k_buckets_.size())) {
-        if (left_edge > 0) {
+        if (left_edge >= 0) {
             std::copy(k_buckets_[left_edge].begin(), k_buckets_[left_edge].end(),
                       std::back_inserter(found_nodes));
             left_edge--;
@@ -75,7 +75,7 @@ bool inline kademlia::RoutingTable::eraseDuplicate(std::vector<NodeEntry> &k_buc
         if (pos == k_bucket.end() - 1) {
             return true;
         }
-        k_bucket.erase(pos, pos + 1);
+        k_bucket.erase(pos);
     }
     return false;
 }
