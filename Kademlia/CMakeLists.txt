@@ -9,6 +9,8 @@ set(KADEMLIALIB_HEADERS
         include/message_builder.h
         include/node_lookup_task.h
         include/lookup_task_base.h
+        include/db_controller.h
+        include/value_lookup_task.h
 )
 
 set(KADEMLIALIB_SOURCES
@@ -17,6 +19,8 @@ set(KADEMLIALIB_SOURCES
         src/utils.cpp
         src/node_lookup_task.cpp
         src/lookup_task_base.cpp
+        src/db_controller.cpp
+        src/value_lookup_task.cpp
 )
 
 option(BUILD_TEST_APP "Enables build of an executable for testing purposes" ON)
@@ -27,6 +31,7 @@ find_package(fmt CONFIG REQUIRED)
 find_package(magic_enum CONFIG REQUIRED)
 find_package(cryptopp CONFIG REQUIRED)
 
+
 qt_add_library(kademliaLib STATIC
         ${KADEMLIALIB_SOURCES}
         ${KADEMLIALIB_HEADERS}
@@ -34,12 +39,12 @@ qt_add_library(kademliaLib STATIC
 
 add_subdirectory(proto)
 
-target_link_libraries(kademliaLib PRIVATE Qt6::Core Qt6::Network protoLib nlohmann_json fmt::fmt cryptopp::cryptopp magic_enum::magic_enum)
+target_link_libraries(kademliaLib PRIVATE Qt6::Core Qt6::Network Qt6::Sql protoLib nlohmann_json fmt::fmt cryptopp::cryptopp magic_enum::magic_enum)
 target_include_directories(kademliaLib PUBLIC include)
 
 if (BUILD_TEST_APP)
     add_executable(cliTest app/main.cpp)
-    target_link_libraries(cliTest PRIVATE kademliaLib Qt6::Core Qt6::Network protoLib nlohmann_json fmt::fmt cryptopp::cryptopp magic_enum::magic_enum)
+    target_link_libraries(cliTest PRIVATE kademliaLib Qt6::Core Qt6::Network Qt6::Sql protoLib nlohmann_json fmt::fmt cryptopp::cryptopp magic_enum::magic_enum)
 endif ()
 
 add_custom_command(

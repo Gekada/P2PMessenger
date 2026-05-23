@@ -35,6 +35,8 @@ namespace kademlia::utils {
 
     std::bitset<128> hexToBitset(const std::string &hex_str);
 
+    std::string bitsetToHex(const std::bitset<128> &b);
+
 }
 #endif //P2PMESSENGER_UTILS_H
 

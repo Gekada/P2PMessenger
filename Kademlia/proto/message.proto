@@ -15,13 +15,26 @@ message NodeInfo {
   string node_id = 3;
 }
 
+message DataInfo {
+  bytes key = 1;
+  bytes value = 3;
+}
+
+message DelayedChatMessage {
+  string message_uuid = 1;
+  int64 timestamp = 3;
+  string encrypted_text = 4;
+}
+
 message Message {
   MessageType type = 1;
   bytes from_user = 2;
   bytes to_user = 3;
-  optional bytes rpc_id = 4;
+  bytes rpc_id = 4;
   int64 timestamp = 5;
   bool is_reply = 6;
   optional bytes payload = 7;
   repeated NodeInfo closest_nodes = 8;
+  repeated DataInfo data = 9;
 }
+

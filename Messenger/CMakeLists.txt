@@ -1,7 +1,5 @@
 set(QML_FILES
         ui/Main.qml
-        ui/Authorization/LoginView.qml
-        ui/Chat/ChatView.qml
 )
 
 set(LIBS
@@ -10,24 +8,18 @@ set(LIBS
         Qt6::Qml
         Qt6::Network
         Qt6::Quick
+        Qt6::Sql
+        kademliaLib
+        protoLib
 )
 
 set(MESSENGERLIB_HEADERS
-        include/AuthorizationHandler.h
-        include/ServerConnection.h
-        include/IRequest.h
-        include/LoginRequest.h
-        include/ViewController.h
-        include/ResponseDto.h
-        include/ViewTypes.h
+        include/chat_controller.h
+
 )
 
 set(MESSENGERLIB_SOURCES
-        src/AuthorizationHandler.cpp
-        src/ServerConnection.cpp
-        src/LoginRequest.cpp
-        src/ViewController.cpp
-        src/ResponseDto.cpp
+        src/chat_controller.cpp
 )
 
 set(MESSENGER_SOURCES
@@ -52,3 +44,10 @@ qt_add_qml_module(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE messengerLib)
+
+add_custom_command(
+        TARGET p2pMessenger POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "../Kademlia/conf"
+        "$<TARGET_FILE_DIR:p2pMessenger>/conf"
+)

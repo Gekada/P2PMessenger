@@ -1,21 +1,59 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QThread>
 
-#include "AuthorizationHandler.h"
-#include "ServerConnection.h"
-#include "ViewController.h"
+#include "node.h"
+#include "chat_controller.h"
 
 int main(int argc, char *argv[]) {
 
     QGuiApplication app(argc, argv);
 
-    constexpr const char *app_name = "simpleServerFront";
+    constexpr const char *app_name = "p2pMessenger";
 
     QGuiApplication::setApplicationName(app_name);
     QGuiApplication::setApplicationVersion("0.0.1");
 
+    QThread *kademliaThread = new QThread();
+
+    kademlia::Node *myNode = new kademlia::Node(1337);
+
+    myNode->moveToThread(kademliaThread);
+
+    QObject::connect(kademliaThread, &QThread::started, myNode, [myNode]() {
+        myNode->startNode();
+    });
+
+    QObject::connect(&app, &QCoreApplication::aboutToQuit, kademliaThread, &QThread::quit);
+    QObject::connect(kademliaThread, &QThread::finished, myNode, &QObject::deleteLater);
+    QObject::connect(kademliaThread, &QThread::finished, kademliaThread, &QObject::deleteLater);
+
+    kademliaThread->start();
+
     QQmlApplicationEngine engine;
+
+    ChatController chatController(myNode);
+
+    QObject::connect(&chatController, &ChatController::requestContacts, myNode, &kademlia::Node::fetchContactsFromDb);
+    QObject::connect(&chatController, &ChatController::requestMessages, myNode, &kademlia::Node::fetchMessagesFromDb);
+    QObject::connect(&chatController, &ChatController::requestSendMessage, myNode, &kademlia::Node::sendStore);
+
+    QObject::connect(myNode, &kademlia::Node::contactsFetched, &chatController, &ChatController::onContactsReceived);
+    QObject::connect(myNode, &kademlia::Node::messagesFetched, &chatController, &ChatController::onMessagesReceived);
+
+    QObject::connect(&chatController, &ChatController::requestMyId, myNode, &kademlia::Node::fetchMyId);
+    QObject::connect(myNode, &kademlia::Node::myIdFetched, &chatController, &ChatController::onMyIdReceived);
+
+    QObject::connect(myNode, &kademlia::Node::receivedMessage, &chatController, [&chatController]() {
+        chatController.loadContacts();
+        if (!chatController.currentPeerId().isEmpty()) {
+            chatController.selectChat(chatController.currentPeerId());
+        }
+    });
+
+    engine.rootContext()->setContextProperty("chatController", &chatController);
+
     const QUrl url(QStringLiteral("qrc:/P2PMessenger/ui/Main.qml"));
     QObject::connect(
             &engine, &QQmlApplicationEngine::objectCreated,
@@ -26,18 +64,7 @@ int main(int argc, char *argv[]) {
             Qt::QueuedConnection);
     engine.addImportPath(":/");
 
-    std::unique_ptr<networking::ServerConnection> serverConnection = std::make_unique<networking::ServerConnection>();
-    std::unique_ptr<ViewController> viewController = std::make_unique<ViewController>(engine.rootContext());
-    //std::unique_ptr<networking::authorization::AuthorizationHandler> authorizationHandler = std::make_unique<networking::authorization::AuthorizationHandler>(serverConnection->getSocket());
-
-    engine.rootContext()->setContextProperty("serverConnection", serverConnection.get());
-    engine.rootContext()->setContextProperty("viewController", viewController.get());
-    //engine.rootContext()->setContextProperty("authorizationHandler", authorizationHandler.get());
-
-    auto authHandler = viewController->initializeAuthHandler(serverConnection->getSocket());
-
     engine.load(url);
-
 
 
     return QGuiApplication::exec();

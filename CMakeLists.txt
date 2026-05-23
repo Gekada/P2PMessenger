@@ -14,6 +14,7 @@ find_package(Qt6 COMPONENTS
         Quick
         Protobuf
         Grpc
+        Sql
         REQUIRED
 )
 

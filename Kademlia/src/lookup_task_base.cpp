@@ -40,13 +40,14 @@ void kademlia::ILookupTask::sendNextRequests() {
     }
     // If all nodes have already been queried
     if (active_requests_ == 0 && !is_complete_) {
+        is_complete_ = true;
         emit taskFinished();
     }
 }
 
 void kademlia::ILookupTask::requestTimedOut() {
     active_requests_--;
-    if (checkFirstK()) {
+    if (checkFirstK() && !is_complete_) {
         sendNextRequests();
     } else if (active_requests_ == 0 && !is_complete_) {
         is_complete_ = true;

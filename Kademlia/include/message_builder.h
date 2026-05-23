@@ -21,6 +21,7 @@
 
 class MessageBuilder {
 public:
+    using DataEntry = proto::DataInfo;
 
     MessageBuilder &setType(const proto::MessageType type) {
         protoMessage_.set_type(type);
@@ -48,6 +49,15 @@ public:
             proto_node->set_ip(node.ip_address_.toString().toStdString());
             proto_node->set_node_id(node.node_id_.to_string());
             proto_node->set_port(node.port_);
+        }
+        return *this;
+    }
+
+    MessageBuilder &setData(const std::vector<DataEntry> &nodes) {
+        for (const auto &data_entry: nodes) {
+            proto::DataInfo *record = protoMessage_.add_data();
+            record->set_key(data_entry.key());
+            record->set_value(data_entry.value());
         }
         return *this;
     }
